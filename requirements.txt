@@ -2,8 +2,6 @@ nltk==3.5
 parsimonious==0.8.1
 penman==1.1.0
 datasets==1.4.1
-tokenizers==0.8.1rc2
-sentencepiece==0.1.91
 sacremoses==0.0.43
 packaging==20.4
 pytorch-lightning==0.9.0
