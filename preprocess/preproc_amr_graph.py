@@ -20,71 +20,6 @@ import penman
 from penman.model import Model
 
 
-def simplify_old(tokens, v2c):
-
-    mapping = {}
-    new_tokens = []
-    for tok in tokens:
-        # ignore instance-of
-        if tok.startswith("("):
-            # new_tokens.append('(')
-            last_map = tok.replace("(", "")
-            continue
-        elif tok == "/":
-            save_map = True
-            continue
-        # predicates, we remove any alignment information and parenthesis
-        elif tok.startswith(":"):
-
-            new_tok = tok.strip(")")
-            new_tok = new_tok.split("~")[0]
-            new_tokens.append(new_tok)
-
-            # count_ = tok.count(')')
-            # for _ in range(count_):
-            #     new_tokens.append(')')
-
-        # concepts/reentrancies, treated similar as above
-        else:
-            new_tok = tok.strip(")")
-            new_tok = new_tok.split("~")[0]
-            # now we check if it is a concept or a variable (reentrancy)
-            if Var(new_tok) in v2c:
-                # reentrancy: replace with concept
-                if new_tok not in mapping:
-                    mapping[new_tok] = set()
-                mapping[new_tok].add(len(new_tokens))
-                # except:
-                #     print(new_tokens)
-                #     print(" ".join(tokens))
-                #     print(new_tok)
-                #     print(mapping)
-                #     print("xx")
-                #     exit()
-                new_tok = v2c[Var(new_tok)]._name
-
-            # remove sense information
-            elif re.search(SENSE_PATTERN, new_tok):
-                new_tok = new_tok[:-3]
-            # remove quotes
-            elif new_tok[0] == '"' and new_tok[-1] == '"':
-                new_tok = new_tok[1:-1]
-            new_tokens.append(new_tok)
-
-            if save_map:
-                if last_map not in mapping:
-                    mapping[last_map] = set()
-
-                mapping[last_map].add(len(new_tokens) - 1)
-                save_map = False
-
-            # count_ = tok.count(')')
-            # for _ in range(count_):
-            #     new_tokens.append(')')
-
-    return new_tokens, mapping
-
-
 def simplify_2(tokens, v2c):
 
     mapping = {}
@@ -135,7 +70,7 @@ def simplify_2(tokens, v2c):
                 new_tok = new_tok[:-3]
             # remove quotes
             elif new_tok[0] == '"' and new_tok[-1] == '"':
-                new_tok = new_tok[1:-1]
+                new_tok = new_tok
 
             if new_tok != "":
                 new_tokens.append(new_tok)
@@ -162,7 +97,7 @@ def get_name(v, v2c):
         # r = str(v).lower()
         r = str(v)
         if r[0] == '"' and r[-1] == '"':
-            return r[1:-1]
+            return r
         else:
             return r
 
@@ -464,7 +399,10 @@ def main(args):
                 i += 1
                 v2c_penman = create_set_instances(graph_penman)
 
-                tokens = amr.split()
+                pattern = r'(?:"[^"]*"|\S+)'
+
+                # Use findall to get all matches
+                tokens = re.findall(pattern, amr)
 
                 try:
                     new_tokens, mapping = simplify_2(tokens, v2c_penman)
