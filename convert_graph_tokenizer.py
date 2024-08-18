@@ -12,14 +12,13 @@ folder = sys.argv[1]
 
 from transformers import T5Tokenizer
 
-tokenizer = T5Tokenizer.from_pretrained("t5-base")
-tokenizer = CustomT5Tokenizer(tokenizer)
+tokenizer = CustomT5Tokenizer.from_pretrained("t5-base")
 new_tokens_vocab = {}
 new_tokens_vocab["additional_special_tokens"] = []
 for idx, t in enumerate(new_tokens_amr):
     new_tokens_vocab["additional_special_tokens"].append(t)
-num_added_toks = tokenizer.base_tokenizer.add_special_tokens(new_tokens_vocab)
-tokenizer.base_tokenizer.unique_no_split_tokens.sort(key=lambda x: -len(x))
+num_added_toks = tokenizer.add_special_tokens(new_tokens_vocab)
+tokenizer.unique_no_split_tokens.sort(key=lambda x: -len(x))
 # print(self.tokenizer.unique_no_split_tokens)
 print("We have added tokens", num_added_toks)
 
