@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+from init_tokenizer import CustomT5Tokenizer
 import random
 
 
@@ -17,7 +18,7 @@ def create_dataloader(
     max_output_length: int = 384,
 ):
     if tokenizer is None:
-        tokenizer = T5Tokenizer.from_pretrained("t5-base")
+        tokenizer = CustomT5Tokenizer.from_pretrained("t5-base")
     new_tokens_vocab = {}
     new_tokens_vocab["additional_special_tokens"] = []
     new_tokens_amr_list = list(new_tokens_amr)
