@@ -10,19 +10,23 @@ import random
 
 def create_dataloader(
     data_path: str,
+    tokenizer=None,
     batch_size: int = 128,
     model_name: str = "t5-base",
     max_input_length: int = 384,
     max_output_length: int = 384,
-    tokenizer=None,
 ):
     if tokenizer is None:
         tokenizer = T5Tokenizer.from_pretrained("t5-base")
     new_tokens_vocab = {}
     new_tokens_vocab["additional_special_tokens"] = []
-    for idx, t in enumerate(new_tokens_amr):
+    new_tokens_amr_list = list(new_tokens_amr)
+    new_tokens_amr_list.sort(key=lambda x: len(x), reverse=True)
+    for idx, t in enumerate(new_tokens_amr_list):
         new_tokens_vocab["additional_special_tokens"].append(t)
     num_added_toks = tokenizer.add_special_tokens(new_tokens_vocab)
+    tokenizer.unique_no_split_tokens.sort(key=lambda x: -len(x))
+    print(f"Added {num_added_toks} tokens")
     dataset = Seq2SeqDataset(
         tokenizer,
         data_path,
@@ -79,7 +83,7 @@ def convert_AMR(input_ids, edges, edge_types, target_labels, tokenizer, target_t
         src, dest = edges[:, j]
         G.add_edge(int(dest), int(src))
     labels_dict = {
-        node_id: tokenizer.decode(input_ids[node_id]) for node_id in G.nodes()
+        node_id: tokenizer.decode([input_ids[node_id]]) for node_id in G.nodes()
     }
     AMR = {}
     AMR["graph"] = G
