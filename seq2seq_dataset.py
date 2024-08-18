@@ -211,6 +211,7 @@ class Seq2SeqDataset(AbstractSeq2SeqDataset):
         batch_encoding["ids"] = torch.tensor([x["id"] for x in batch])
         batch_encoding["graphs"] = self.generate_edge_tensors(batch)
         batch_encoding["tgt_text"] = [x["tgt_texts"] for x in batch]
+        batch_encoding["src_text"] = [x["src_texts"] for x in batch]
         return batch_encoding
 
     def generate_edge_tensors(self, batch):
