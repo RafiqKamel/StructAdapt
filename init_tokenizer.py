@@ -1,5 +1,5 @@
 from transformers import T5Tokenizer
-from utils import split_with_quotes
+import re
 
 
 class CustomT5Tokenizer(T5Tokenizer):
@@ -41,3 +41,12 @@ class CustomT5Tokenizer(T5Tokenizer):
         return " ".join(
             [self.inverse_vocab_dict[int(token_id)] for token_id in token_ids]
         )
+
+
+def split_with_quotes(text):
+    # Regular expression pattern to match words outside of quotes
+    pattern = r'(?:"[^"]*"|\S+)'
+
+    # Use findall to get all matches
+    tokens = re.findall(pattern, text)
+    return tokens
