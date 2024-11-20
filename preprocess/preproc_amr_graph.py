@@ -96,6 +96,7 @@ def simplify_2(tokens, v2c):
             last_map = tok.replace("(", "")
             continue
         elif tok == "/":
+
             save_map = True
             continue
         # predicates, we remove any alignment information and parenthesis
@@ -116,9 +117,9 @@ def simplify_2(tokens, v2c):
 
             if new_tok == "":
                 continue
-
             # now we check if it is a concept or a variable (reentrancy)
-            if new_tok in v2c:
+
+            if new_tok in v2c and (new_tok not in v2c.values() or not save_map):
                 # reentrancy: replace with concept
                 if new_tok not in mapping:
                     mapping[new_tok] = set()
