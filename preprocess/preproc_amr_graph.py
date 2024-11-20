@@ -20,6 +20,71 @@ import penman
 from penman.model import Model
 
 
+def simplify_old(tokens, v2c):
+
+    mapping = {}
+    new_tokens = []
+    for tok in tokens:
+        # ignore instance-of
+        if tok.startswith("("):
+            # new_tokens.append('(')
+            last_map = tok.replace("(", "")
+            continue
+        elif tok == "/":
+            save_map = True
+            continue
+        # predicates, we remove any alignment information and parenthesis
+        elif tok.startswith(":"):
+
+            new_tok = tok.strip(")")
+            new_tok = new_tok.split("~")[0]
+            new_tokens.append(new_tok)
+
+            # count_ = tok.count(')')
+            # for _ in range(count_):
+            #     new_tokens.append(')')
+
+        # concepts/reentrancies, treated similar as above
+        else:
+            new_tok = tok.strip(")")
+            new_tok = new_tok.split("~")[0]
+            # now we check if it is a concept or a variable (reentrancy)
+            if Var(new_tok) in v2c:
+                # reentrancy: replace with concept
+                if new_tok not in mapping:
+                    mapping[new_tok] = set()
+                mapping[new_tok].add(len(new_tokens))
+                # except:
+                #     print(new_tokens)
+                #     print(" ".join(tokens))
+                #     print(new_tok)
+                #     print(mapping)
+                #     print("xx")
+                #     exit()
+                new_tok = v2c[Var(new_tok)]._name
+
+            # remove sense information
+            elif re.search(SENSE_PATTERN, new_tok):
+                new_tok = new_tok[:-3]
+            # remove quotes
+            elif new_tok[0] == '"' and new_tok[-1] == '"':
+                new_tok = new_tok
+            new_tokens.append(new_tok)
+
+            if save_map:
+                if last_map not in mapping:
+                    mapping[last_map] = set()
+
+                mapping[last_map].add(len(new_tokens) - 1)
+                save_map = False
+
+            # count_ = tok.count(')')
+            # for _ in range(count_):
+            #     new_tokens.append(')')
+
+    return new_tokens, mapping
+
+
 def simplify_2(tokens, v2c):
 
     mapping = {}
@@ -157,10 +222,10 @@ def get_line_graph_new(graph, new_tokens, mapping, roles_in_order, amr):
 
         count_roles += 1
 
-        # if edge == ':wiki':
+        # if edge == ":wiki":
         #     continue
 
-        # process triples
+        # # process triples
         # src = str(src).replace('"', "")
         # tgt = str(tgt).replace('"', "")
 
@@ -185,15 +250,36 @@ def get_line_graph_new(graph, new_tokens, mapping, roles_in_order, amr):
             exit()
 
         for s_id in src_id:
-            if (s_id, edge_id, "d") not in triples_set:
+            if (s_id, edge_id, "d") not in triples_set and (
+                edge_id,
+                s_id,
+                "d",
+            ) not in triples_set:
                 triples.append((s_id, edge_id, "d"))
                 triples_set.add((s_id, edge_id, "d"))
+            if (edge_id, s_id, "r") not in triples_set and (
+                s_id,
+                edge_id,
+                "r",
+            ) not in triples_set:
                 triples.append((edge_id, s_id, "r"))
+                triples_set.add((edge_id, s_id, "r"))
+
         for t_id in tgt_id:
-            if (edge_id, t_id, "d") not in triples_set:
+            if (edge_id, t_id, "d") not in triples_set and (
+                t_id,
+                edge_id,
+                "d",
+            ) not in triples_set:
                 triples.append((edge_id, t_id, "d"))
                 triples_set.add((edge_id, t_id, "d"))
+            if (t_id, edge_id, "r") not in triples_set and (
+                edge_id,
+                t_id,
+                "r",
+            ) not in triples_set:
                 triples.append((t_id, edge_id, "r"))
+                triples_set.add((t_id, edge_id, "r"))
 
     if nodes_to_print == []:
         # single node graph, first triple is ":top", second triple is the node
@@ -217,7 +303,6 @@ def get_line_graph(graph, new_tokens, mapping, tokens):
         if edge == ":top":
             # store this to add scope later
             top_node = get_name(tgt, v2c)
-            print("top_node", top_node)
             continue
         if edge == ":instance-of" or edge == ":wiki":
             # if edge == ':instance-of':
@@ -400,7 +485,6 @@ def main(args):
                 v2c_penman = create_set_instances(graph_penman)
 
                 pattern = r'(?:"[^"]*"|\S+)'
-
                 # Use findall to get all matches
                 tokens = re.findall(pattern, amr)
 
