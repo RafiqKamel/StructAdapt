@@ -168,9 +168,16 @@ def get_name(v, v2c):
             return r
 
 
+def reverse_edge(edge):
+    if edge.endswith("-of"):
+        return edge[:-3]
+    else:
+        return edge
+
+
 def get_edge(tokens, edge, edge_id, triple, mapping, graph):
     for idx in range(edge_id + 1, len(tokens)):
-        if tokens[idx] == edge:
+        if reverse_edge(tokens[idx]) == reverse_edge(edge):
             return idx
 
     print(tokens)
@@ -192,11 +199,35 @@ def get_positions(new_tokens, src):
     return pos
 
 
+def inverse_arg_of(triples):
+    new_triples = []
+    for source, relation, target in triples:
+        if relation.endswith("-of"):
+            new_relation = relation[:-3]  # Remove the '-of' part
+            new_triples.append((target, new_relation, source))
+        else:
+            new_triples.append((source, relation, target))
+    return new_triples
+
+
+def reverse_roles_in_order(roles_in_order):
+    new_roles = []
+    for role in roles_in_order:
+        if "-of" in role:
+            new_roles.append(role[:-3])
+        else:
+            new_roles.append(role)
+    return new_roles
+
+
 def get_line_graph_new(graph, new_tokens, mapping, roles_in_order, amr):
     triples = []
     nodes_to_print = new_tokens
 
     graph_triples = graph.triples
+
+    graph_triples = inverse_arg_of(graph_triples)
+    roles_in_order = reverse_roles_in_order(roles_in_order)
 
     edge_id = -1
     triples_set = set()
@@ -286,72 +317,6 @@ def get_line_graph_new(graph, new_tokens, mapping, roles_in_order, amr):
         # single node graph, first triple is ":top", second triple is the node
         triples.append((0, 0, "s"))
     return nodes_to_print, triples
-
-
-def get_line_graph(graph, new_tokens, mapping, tokens):
-    triples = []
-    uniq = 0
-    nodes_to_print = new_tokens
-
-    graph_triples = graph.triples()
-
-    v2c = graph.var2concept()
-
-    edge_id = 0
-    triples_set = set()
-    for triple in graph_triples:
-        src, edge, tgt = triple
-        if edge == ":top":
-            # store this to add scope later
-            top_node = get_name(tgt, v2c)
-            continue
-        if edge == ":instance-of" or edge == ":wiki":
-            # if edge == ':instance-of':
-            continue
-        # process triples
-        # src = str(src).replace('"', "")
-        # tgt = str(tgt).replace('"', "")
-
-        try:
-            if src not in mapping:
-                src_id = get_positions(new_tokens, src)
-            else:
-                src_id = sorted(list(mapping[src]))
-            # check edge to verify
-            edge_id = get_edge(new_tokens, edge, edge_id)
-
-            if tgt not in mapping:
-                tgt_id = get_positions(new_tokens, tgt)
-            else:
-                tgt_id = sorted(list(mapping[tgt]))
-        except:
-            print(src, edge, tgt)
-            print("error")
-            print(mapping)
-
-            # print(graph_triples)
-            print(" ".join(new_tokens))
-            print(" ".join(tokens))
-            exit()
-
-        for s_id in src_id:
-            for t_id in tgt_id:
-                if (s_id, edge_id, "d") not in triples_set:
-                    triples.append((s_id, edge_id, "d"))
-                    triples_set.add((s_id, edge_id, "d"))
-                    # triples.append((edge_id, s_id, 'r'))
-                if (edge_id, t_id, "d") not in triples_set:
-                    triples.append((edge_id, t_id, "d"))
-                    triples_set.add((edge_id, t_id, "d"))
-                    # triples.append((t_id, edge_id, 'r'))
-
-    if nodes_to_print == []:
-        # single node graph, first triple is ":top", second triple is the node
-        triples.append((0, 0, "s"))
-    return nodes_to_print, triples
-
-
-##########################
 
 
 def print_simplified(graph_triples, v2c):
